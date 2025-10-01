@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Mailjet = require('node-mailjet');
+const Mailjet = require('node-mailjet');
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private readonly mailjet: Mailjet.Client;
+  private readonly mailjet: any;
   private readonly senderEmail: string;
   private readonly senderName: string;
 
@@ -13,7 +13,7 @@ export class MailService {
     const apiKey = this.configService.get<string>('mailjet.apiKey');
     const secretKey = this.configService.get<string>('mailjet.secretKey');
 
-    this.mailjet = Mailjet.connect(apiKey, secretKey);
+    this.mailjet = Mailjet.apiConnect(apiKey, secretKey);
 
     this.senderEmail = this.configService.get<string>('mailjet.senderEmail');
     this.senderName = this.configService.get<string>('mailjet.senderName');

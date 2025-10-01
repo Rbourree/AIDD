@@ -4,7 +4,7 @@ import { TenantsController } from './controllers/tenants.controller';
 import { TenantRepository } from './repositories/tenant.repository';
 import { InvitationRepository } from './repositories/invitation.repository';
 import { UsersModule } from '../users/users.module';
-import { MailModule } from '../../common/services/mail/mail.module';
+import { MailModule } from '../../common/integrations/mail/mail.module';
 
 @Module({
   imports: [UsersModule, MailModule],

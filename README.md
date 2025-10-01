@@ -213,7 +213,7 @@ src/
 │   ├── guards/                    # JwtAuthGuard, TenantRoleGuard, AuthThrottlerGuard
 │   ├── interceptors/              # SentryInterceptor, TenantFilterInterceptor
 │   ├── validators/                # @IsStrongPassword
-│   └── services/
+│   └── integrations/              # External API integrations
 │       ├── mail/                  # MailService (Mailjet)
 │       ├── yousign/               # YousignService (e-signature)
 │       └── ar24/                  # Ar24Service (registered mail)

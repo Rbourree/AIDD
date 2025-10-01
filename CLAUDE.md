@@ -210,9 +210,9 @@ HTTP Response
 
 **Key Services & Repositories**:
 - `PrismaService` (src/database/prisma.service.ts) - Database client, injected ONLY in repositories
-- `MailService` (src/common/services/mail/mail.service.ts) - Mailjet email integration
-- `YousignService` (src/common/services/yousign/yousign.service.ts) - Yousign electronic signature integration
-- `Ar24Service` (src/common/services/ar24/ar24.service.ts) - AR24 registered mail integration
+- `MailService` (src/common/integrations/mail/mail.service.ts) - Mailjet email integration
+- `YousignService` (src/common/integrations/yousign/yousign.service.ts) - Yousign electronic signature integration
+- `Ar24Service` (src/common/integrations/ar24/ar24.service.ts) - AR24 registered mail integration
 - `UserRepository` - User data access, used by AuthService and UsersService
 - `TenantRepository` - Tenant data access, includes TenantUser relationship management, used by guards
 - `InvitationRepository` - Invitation data access (part of Tenants module)
@@ -459,7 +459,7 @@ No tests currently in repo, but when adding:
     document.id,
   );
   ```
-- See `src/common/services/yousign/` for full API
+- See `src/common/integrations/yousign/` for full API
 - All Yousign exceptions in `exceptions/yousign.exceptions.ts`
 
 **Using AR24 for registered mail**:
@@ -525,7 +525,7 @@ No tests currently in repo, but when adding:
   - `ng` - Negligence proof
   - `rf` - Refusal proof
 - **Limits**: 256MB maximum attachment size, 30-day retention
-- See `src/common/services/ar24/` for full API
+- See `src/common/integrations/ar24/` for full API
 - All AR24 exceptions in `exceptions/ar24.exceptions.ts`
 
 ## Error Tracking & Monitoring (Sentry)

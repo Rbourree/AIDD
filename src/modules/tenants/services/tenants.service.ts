@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { TenantRepository } from '../repositories/tenant.repository';
 import { InvitationRepository } from '../repositories/invitation.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
-import { MailService } from '../../../common/services/mail/mail.service';
+import { MailService } from '../../../common/integrations/mail/mail.service';
 import { TenantEntity, TenantUserEntity } from '../entities/tenant.entity';
 import { InvitationEntity } from '../entities/invitation.entity';
 import { CreateTenantDto } from '../dto/create-tenant.dto';
