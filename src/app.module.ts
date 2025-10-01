@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { SentryModule } from '@ntegral/nestjs-sentry';
-import { ConfigModule } from './config/config.module';
-import { DatabaseModule } from './database/database.module';
-import { MailModule } from './common/integrations/mail/mail.module';
-import { HealthModule } from './modules/health/health.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { TenantsModule } from './modules/tenants/tenants.module';
-import { ItemsModule } from './modules/items/items.module';
+import { ConfigModule } from '@config/config.module';
+import { DatabaseModule } from '@database/database.module';
+import { MailModule } from '@common/integrations/mail/mail.module';
+import { HealthModule } from '@modules/health/health.module';
+import { AuthModule } from '@modules/auth/auth.module';
+import { UsersModule } from '@modules/users/users.module';
+import { TenantsModule } from '@modules/tenants/tenants.module';
+import { ItemsModule } from '@modules/items/items.module';
 
 @Module({
   imports: [

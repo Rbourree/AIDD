@@ -6,9 +6,9 @@ import { AuthService } from './services/auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { UsersModule } from '../users/users.module';
-import { TenantsModule } from '../tenants/tenants.module';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { UsersModule } from '@modules/users/users.module';
+import { TenantsModule } from '@modules/tenants/tenants.module';
 
 @Module({
   imports: [PassportModule, JwtModule.register({}), UsersModule, TenantsModule],

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../database/prisma.service';
+import { PrismaService } from '@database/prisma.service';
 import { TenantEntity, TenantUserEntity } from '../entities/tenant.entity';
 import { TenantMapper } from '../mappers/tenant.mapper';
 import { CreateTenantDto } from '../dto/create-tenant.dto';

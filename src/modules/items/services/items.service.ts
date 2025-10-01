@@ -3,8 +3,8 @@ import { ItemRepository } from '../repositories/item.repository';
 import { ItemEntity } from '../entities/item.entity';
 import { CreateItemDto } from '../dto/create-item.dto';
 import { UpdateItemDto } from '../dto/update-item.dto';
-import { PaginationDto } from '../../../common/dto/pagination.dto';
-import { PaginatedResponse } from '../../../common/interfaces/paginated-response.interface';
+import { PaginationDto } from '@common/dto/pagination.dto';
+import { PaginatedResponse } from '@common/interfaces/paginated-response.interface';
 import { ItemNotFoundException, ItemForbiddenException } from '../exceptions/item.exceptions';
 
 @Injectable()

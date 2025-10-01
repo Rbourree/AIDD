@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../../database/prisma.service';
-import { UserRepository } from '../../users/repositories/user.repository';
-import { TenantRepository } from '../../tenants/repositories/tenant.repository';
-import { InvitationRepository } from '../../tenants/repositories/invitation.repository';
+import { PrismaService } from '@database/prisma.service';
+import { UserRepository } from '@modules/users/repositories/user.repository';
+import { TenantRepository } from '@modules/tenants/repositories/tenant.repository';
+import { InvitationRepository } from '@modules/tenants/repositories/invitation.repository';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
-import { UserMapper } from '../../users/mappers/user.mapper';
+import { UserMapper } from '@modules/users/mappers/user.mapper';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { AcceptInvitationDto } from '../dto/accept-invitation.dto';
-import { JwtPayload } from '../../../common/interfaces/jwt-payload.interface';
+import { JwtPayload } from '@common/interfaces/jwt-payload.interface';
 import {
   AuthInvalidCredentialsException,
   AuthUserHasNoTenantsException,
@@ -23,7 +23,7 @@ import {
   InvitationNotFoundException,
   InvitationAlreadyAcceptedException,
   InvitationExpiredException,
-} from '../../tenants/exceptions/invitation.exceptions';
+} from '@modules/tenants/exceptions/invitation.exceptions';
 import * as bcrypt from 'bcrypt';
 import { TenantRole } from '@prisma/client';
 

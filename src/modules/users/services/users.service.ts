@@ -3,8 +3,8 @@ import { UserRepository } from '../repositories/user.repository';
 import { UserEntity } from '../entities/user.entity';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
-import { PaginationDto } from '../../../common/dto/pagination.dto';
-import { PaginatedResponse } from '../../../common/interfaces/paginated-response.interface';
+import { PaginationDto } from '@common/dto/pagination.dto';
+import { PaginatedResponse } from '@common/interfaces/paginated-response.interface';
 import {
   UserNotFoundException,
   UserEmailAlreadyExistsException,

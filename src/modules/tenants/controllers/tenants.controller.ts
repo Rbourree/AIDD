@@ -6,9 +6,9 @@ import { UpdateTenantDto } from '../dto/update-tenant.dto';
 import { AddUserToTenantDto } from '../dto/add-user-to-tenant.dto';
 import { UpdateUserRoleDto } from '../dto/update-user-role.dto';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
-import { CurrentUser } from '../../../common/decorators/current-user.decorator';
-import { JwtPayload } from '../../../common/interfaces/jwt-payload.interface';
-import { Public } from '../../../common/decorators/public.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { JwtPayload } from '@common/interfaces/jwt-payload.interface';
+import { Public } from '@common/decorators/public.decorator';
 
 @ApiTags('tenants')
 @ApiBearerAuth()

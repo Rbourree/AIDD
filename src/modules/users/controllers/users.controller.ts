@@ -4,9 +4,9 @@ import { UsersService } from '../services/users.service';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { SwitchTenantDto } from '../dto/switch-tenant.dto';
-import { PaginationDto } from '../../../common/dto/pagination.dto';
-import { CurrentUser } from '../../../common/decorators/current-user.decorator';
-import { JwtPayload } from '../../../common/interfaces/jwt-payload.interface';
+import { PaginationDto } from '@common/dto/pagination.dto';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { JwtPayload } from '@common/interfaces/jwt-payload.interface';
 
 @ApiTags('users')
 @ApiBearerAuth()

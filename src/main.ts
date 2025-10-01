@@ -3,8 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
+import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
+import { SentryInterceptor } from '@common/interceptors/sentry.interceptor';
 import helmet from 'helmet';
 
 async function bootstrap() {

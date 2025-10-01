@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { Reflector } from '@nestjs/core';
 import { TenantRole } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { TenantRepository } from '../../modules/tenants/repositories/tenant.repository';
+import { TenantRepository } from '@modules/tenants/repositories/tenant.repository';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()

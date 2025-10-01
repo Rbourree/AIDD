@@ -5,8 +5,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
-import { Public } from '../../common/decorators/public.decorator';
-import { AuthThrottlerGuard } from '../../common/guards/auth-throttler.guard';
+import { Public } from '@common/decorators/public.decorator';
+import { AuthThrottlerGuard } from '@common/guards/auth-throttler.guard';
 
 @ApiTags('auth')
 @Controller('auth')
