@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/NestJS-10.0-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/TypeScript-5.1-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Prisma-5.0-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
+  <img src="https://img.shields.io/badge/TypeORM-0.3-FF6C37?style=for-the-badge&logo=typeorm&logoColor=white" alt="TypeORM" />
   <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
 </p>
@@ -57,7 +57,7 @@
 
 ### 🚀 Developer Experience
 - TypeScript 5.1+ strict mode
-- Repository pattern with Prisma
+- Repository pattern with TypeORM
 - Auto-generated Swagger documentation
 - Hot-reload development
 - ESLint + Prettier + Husky
@@ -86,9 +86,7 @@ cp .env.example .env
 npm run docker:up
 
 # 4. Setup database
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
+npm run typeorm:migration:run
 
 # 5. Start the API
 npm run start:dev
@@ -98,10 +96,6 @@ npm run start:dev
 - API: http://localhost:3000/api
 - Swagger: http://localhost:3000/swagger
 - Health: http://localhost:3000/health
-
-**Test Credentials** (after seeding):
-- Admin: `admin@example.com` / `password123` (OWNER)
-- User: `user@example.com` / `password123` (MEMBER)
 
 ➡️ **For detailed setup instructions, see the [Quick Start Guide](./docs/getting-started/quick-start.md)**
 
@@ -156,7 +150,7 @@ src/
 │   ├── interceptors/         # SentryInterceptor, TenantFilterInterceptor
 │   └── integrations/         # External APIs (Mail, Yousign, AR24)
 ├── config/                   # Configuration management
-├── database/                 # Prisma client
+├── database/                 # TypeORM configuration & providers
 ├── modules/                  # Feature modules
 │   ├── auth/                # Authentication & authorization
 │   ├── users/               # User management
@@ -170,7 +164,7 @@ src/
 **Architecture**:
 - **Repository Pattern**: Clean separation between data access and business logic
 - **Multi-Tenancy**: Complete tenant isolation with JWT-based context
-- **Layered Architecture**: Controller → Service → Repository → Prisma → Database
+- **Layered Architecture**: Controller → Service → Repository → TypeORM → Database
 
 ➡️ **[Learn more about the architecture](./docs/architecture/overview.md)**
 
@@ -188,10 +182,10 @@ npm run build              # Compile TypeScript
 npm run start:prod         # Run production build
 
 # Database
-npm run prisma:generate    # Generate Prisma Client
-npm run prisma:migrate     # Create and apply migrations
-npm run prisma:seed        # Seed database with sample data
-npm run prisma:studio      # Open Prisma Studio (database GUI)
+npm run typeorm:migration:run      # Apply pending migrations
+npm run typeorm:migration:revert   # Roll back the last migration
+npm run typeorm:migration:generate # Generate a migration from entity changes
+npm run typeorm:migration:create   # Create an empty migration file
 
 # Docker
 npm run docker:up          # Start PostgreSQL container
@@ -253,9 +247,9 @@ Common issues and solutions:
 |-------|----------|
 | Database connection failed | `npm run docker:up` |
 | Port 3000 in use | Change `PORT` in `.env` |
-| Prisma Client not found | `npm run prisma:generate` |
+| TypeORM CLI error | Check `.env` and rerun `npm run typeorm:migration:run` |
 | JWT errors | Refresh token or login again |
-| Migration conflicts | `npx prisma migrate reset` (dev only) |
+| Migration failed | `npm run typeorm:migration:revert` |
 
 ➡️ **[Complete troubleshooting guide](./docs/troubleshooting.md)**
 
@@ -317,7 +311,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### ⭐ Star this repository if you find it helpful!
 
-**Built with ❤️ using NestJS, Prisma, TypeScript**
+**Built with ❤️ using NestJS, TypeORM, TypeScript**
 
 <p>
   <a href="https://nestjs.com">
@@ -326,8 +320,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
   <a href="https://www.typescriptlang.org">
     <img src="https://img.shields.io/badge/Written%20in-TypeScript-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
   </a>
-  <a href="https://www.prisma.io">
-    <img src="https://img.shields.io/badge/ORM-Prisma-2D3748?style=flat-square&logo=prisma" alt="Prisma" />
+  <a href="https://typeorm.io">
+    <img src="https://img.shields.io/badge/ORM-TypeORM-FF6C37?style=flat-square&logo=typeorm&logoColor=white" alt="TypeORM" />
   </a>
 </p>
 

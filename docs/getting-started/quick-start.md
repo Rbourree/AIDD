@@ -1,138 +1,78 @@
-# 🚀 Quick Start Guide
+# Quick Start
 
-Get your NestJS Multi-Tenant API running in 5 minutes!
+This quick start shows how to boot the NestJS Multi-Tenant API using TypeORM and create your first tenant.
 
-## Prerequisites
-
-- Node.js 18+ installed
-- Docker Desktop installed and running
-
-## Step-by-Step Setup
-
-### 1. Install Dependencies (2 min)
+## 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configure Environment (30 sec)
+## 2. Configure Environment Variables
 
 ```bash
 cp .env.example .env
 ```
 
-**Optional**: Edit `.env` if you want to customize (JWT secrets, ports, etc.)
+Adjust the database settings if you are not using the provided Docker container.
 
-For quick start, the defaults work fine!
-
-### 3. Start Database (30 sec)
+## 3. Start PostgreSQL
 
 ```bash
 npm run docker:up
 ```
 
-Wait for PostgreSQL to be ready (about 10 seconds).
+Use `docker ps` to confirm the container is ready before continuing.
 
-### 4. Setup Database (1 min)
+## 4. Run Migrations
 
 ```bash
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
+npm run typeorm:migration:run
 ```
 
-This creates sample users:
-- `admin@example.com` / `password123` (OWNER role)
-- `user@example.com` / `password123` (MEMBER role)
+All entities registered in `src/config/typeorm.config.ts` will be synced via migrations. Do **not** enable `synchronize` in production.
 
-### 5. Start the API (30 sec)
+## 5. Launch the API
 
 ```bash
 npm run start:dev
 ```
 
-Wait for the message: `🚀 Application is running on: http://localhost:3000/api`
+- API base URL: `http://localhost:3000/api`
+- Swagger UI: `http://localhost:3000/swagger`
+- Health check: `http://localhost:3000/health`
 
-## ✅ You're Ready!
+## 6. Register the First Tenant Owner
 
-### Try It Out
+Send a request to create a user and tenant in one step. Leaving `tenantId` empty creates a brand new workspace automatically.
 
-1. **Open Swagger Documentation**: http://localhost:3000/swagger
-
-2. **Login as Admin**:
-   - Click on `POST /auth/login`
-   - Click "Try it out"
-   - Use credentials:
-     ```json
-     {
-       "email": "admin@example.com",
-       "password": "password123"
-     }
-     ```
-   - Copy the `accessToken` from the response
-
-3. **Authorize in Swagger**:
-   - Click the green "Authorize" button at the top
-   - Paste token in format: `Bearer YOUR_ACCESS_TOKEN`
-   - Click "Authorize"
-
-4. **Test Protected Endpoints**:
-   - Try `GET /users/me` to see your profile
-   - Try `GET /tenants` to see your tenants
-   - Try `GET /items` to see tenant-filtered items
-
-## 📍 Important URLs
-
-- **API Base**: http://localhost:3000/api
-- **Swagger Docs**: http://localhost:3000/swagger
-- **Health Check**: http://localhost:3000/health
-- **Prisma Studio**: Run `npm run prisma:studio` → http://localhost:5555
-
-## 🔑 Test Accounts
-
-| Email | Password | Role | Tenant |
-|-------|----------|------|--------|
-| admin@example.com | password123 | OWNER | Acme Corporation |
-| user@example.com | password123 | MEMBER | Acme Corporation |
-
-## 🎯 Next Steps
-
-1. **Explore the API**: Use Swagger to test all endpoints
-2. **Read the Docs**: Check the [Architecture Guide](../architecture/overview.md)
-3. **Make Your First API Call**: Follow the [First Steps Guide](./first-steps.md)
-4. **Add a Feature**: Learn how in the [Development Guide](../development/adding-features.md)
-
-## 🐛 Troubleshooting
-
-**Database not connecting?**
 ```bash
-npm run docker:down
-npm run docker:up
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+        "email": "owner@example.com",
+        "password": "Password123!",
+        "firstName": "Ada",
+        "lastName": "Lovelace"
+      }'
 ```
 
-**Port 3000 already in use?**
-- Change `PORT=3001` in `.env`
-- Restart: `npm run start:dev`
+You can now log in with the same credentials using `POST /v1/auth/login`. The generated tenant will be named "Ada's Workspace" and can be updated later via the Tenants API.
 
-**Prisma errors?**
-```bash
-npm run prisma:generate
-npx prisma migrate reset
-npm run prisma:seed
-```
+## Useful npm Scripts
 
-**Need help?**
-- Check the [Troubleshooting Guide](../troubleshooting.md)
-- Review Swagger documentation
-- Check Docker logs: `docker-compose logs`
+| Command | Description |
+|---------|-------------|
+| `npm run start:dev` | Start the application in watch mode |
+| `npm run typeorm:migration:run` | Apply pending migrations |
+| `npm run typeorm:migration:revert` | Roll back the last migration |
+| `npm run typeorm:migration:generate --name <Name>` | Generate a migration from entity changes |
+| `npm run docker:down` | Stop PostgreSQL |
 
-## 🎉 That's It!
+## Tips
 
-You now have a production-ready multi-tenant API with:
-- ✅ JWT Authentication
-- ✅ Role-based Access Control
-- ✅ Multi-tenant Isolation
-- ✅ Email Invitations (configure Mailjet for production)
-- ✅ Complete API Documentation
+- Keep `.env` in sync with your database credentials when running migrations.
+- Run `npm run typeorm:migration:generate` after changing entities to keep the schema consistent.
+- Swagger authentication requires a bearer token from `POST /v1/auth/login`.
 
-Happy coding! 🚀
+For a more in-depth walkthrough, check the [Installation Guide](./installation.md) and [First Steps](./first-steps.md).
