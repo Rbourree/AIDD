@@ -1,12 +1,31 @@
 services:
-  postgres:
+
+  mylegitech_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: mylegitech-api
+    restart: always
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file:
+      - .env
+    depends_on:
+      api_postgres:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    command: sh -c "npx prisma migrate deploy && npm run start:dev"
+
+  mylegitech_postgres:
     image: postgres:15-alpine
-    container_name: nestjs-postgres
+    container_name: mylegitech-postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nestjs_db
+      POSTGRES_DB: mylegitech
     ports:
       - "5432:5432"
     volumes:
@@ -17,23 +36,47 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: nestjs-api
+  keycloak:
+    container_name: keycloak_app
+    image: quay.io/keycloak/keycloak:latest
     restart: always
     ports:
-      - "${PORT:-3000}:${PORT:-3000}"
-    env_file:
-      - .env
+      - "8443:8443"
+      - "8090:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
+      KC_HOSTNAME: http://localhost:8090
+      KC_DB_URL: jdbc:postgresql://keycloak_postgres:5432/keycloak
+      KC_DB: postgres
+      KC_DB_USERNAME:  user
+      KC_DB_PASSWORD: password
     depends_on:
-      postgres:
-        condition: service_healthy
+      - keycloak_postgres
+    networks:
+      - keycloak-network
+    command:
+      - start-dev
+
+  keycloak_postgres:
+    container_name: keycloak_postgres
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_PORT: 5432
     volumes:
-      - ./src:/app/src
-    command: sh -c "npm run typeorm:migration:run && npm run start:dev"
+      - postgres_data_keycloak:/var/lib/postgresql/data
+    networks:
+      - keycloak-network
+
+networks:
+  keycloak-network:
+    name: keycloak-network
+    driver: bridge
 
 volumes:
   postgres_data:
+  postgres_data_keycloak:

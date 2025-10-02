@@ -24,7 +24,6 @@ RUN apk add --no-cache openssl
 RUN npm ci --only=production
 
 COPY . .
-
 RUN npm run build
 
 EXPOSE 3000
