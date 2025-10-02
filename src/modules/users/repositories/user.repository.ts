@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@database/prisma.service';
-import { UserEntity } from '../entities/user.entity';
-import { UserMapper } from '../mappers/user.mapper';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, ILike } from 'typeorm';
+import { User } from '../entities/user.entity';
+import { TenantUser } from '@modules/tenants/entities/tenant-user.entity';
 import { UpdateUserDto } from '../dto/update-user.dto';
 
 export interface FindAllUsersOptions {
@@ -20,159 +21,134 @@ export interface TenantWithRole {
 
 @Injectable()
 export class UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(TenantUser)
+    private readonly tenantUserRepository: Repository<TenantUser>,
+  ) {}
 
   /**
    * Find user by ID
    */
-  async findById(id: string): Promise<UserEntity | null> {
-    const user = await this.prisma.user.findUnique({
+  async findById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
       where: { id },
-      include: {
-        tenantUsers: {
-          include: {
-            tenant: true,
-          },
-        },
-      },
+      relations: ['tenantUsers', 'tenantUsers.tenant'],
     });
-
-    return user ? UserMapper.toEntity(user) : null;
   }
 
   /**
    * Find user by email
    */
-  async findByEmail(email: string): Promise<UserEntity | null> {
-    const user = await this.prisma.user.findUnique({
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
       where: { email },
-      include: {
-        tenantUsers: {
-          include: {
-            tenant: true,
-          },
-        },
-      },
+      relations: ['tenantUsers', 'tenantUsers.tenant'],
     });
-
-    return user ? UserMapper.toEntity(user) : null;
   }
 
   /**
    * Find user by email with password (for authentication)
    */
-  async findByEmailWithPassword(email: string) {
-    return this.prisma.user.findUnique({
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
       where: { email },
+      select: ['id', 'email', 'password', 'firstName', 'lastName', 'createdAt', 'updatedAt'],
     });
   }
 
   /**
    * Find user by ID with password (for password change)
    */
-  async findByIdWithPassword(id: string) {
-    return this.prisma.user.findUnique({
+  async findByIdWithPassword(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
       where: { id },
+      select: ['id', 'email', 'password', 'firstName', 'lastName', 'createdAt', 'updatedAt'],
     });
   }
 
   /**
    * Find all users with pagination and filtering
    */
-  async findAll(options: FindAllUsersOptions): Promise<UserEntity[]> {
+  async findAll(options: FindAllUsersOptions): Promise<User[]> {
     const { skip, take, search } = options;
 
-    const where = search
-      ? {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' as const } },
-            { firstName: { contains: search, mode: 'insensitive' as const } },
-            { lastName: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .orderBy('user.createdAt', 'DESC');
 
-    const users = await this.prisma.user.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { createdAt: 'desc' },
-    });
+    if (search) {
+      queryBuilder.where(
+        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
 
-    return UserMapper.toEntityArray(users);
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
+
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   /**
    * Count users with filtering
    */
   async count(search?: string): Promise<number> {
-    const where = search
-      ? {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' as const } },
-            { firstName: { contains: search, mode: 'insensitive' as const } },
-            { lastName: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
 
-    return this.prisma.user.count({ where });
+    if (search) {
+      queryBuilder.where(
+        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    return queryBuilder.getCount();
   }
 
   /**
    * Update user
    */
-  async update(id: string, dto: UpdateUserDto): Promise<UserEntity> {
-    const data = UserMapper.toPrismaUpdate(dto);
-
-    const user = await this.prisma.user.update({
-      where: { id },
-      data,
-    });
-
-    return UserMapper.toEntity(user);
+  async update(id: string, dto: UpdateUserDto): Promise<User> {
+    await this.userRepository.update(id, dto);
+    return this.findById(id);
   }
 
   /**
    * Update user password
    */
   async updatePassword(id: string, hashedPassword: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id },
-      data: { password: hashedPassword },
-    });
+    await this.userRepository.update(id, { password: hashedPassword });
   }
 
   /**
    * Delete user
    */
   async delete(id: string): Promise<void> {
-    await this.prisma.user.delete({
-      where: { id },
-    });
+    await this.userRepository.delete(id);
   }
 
   /**
    * Get user's tenants with roles
    */
   async getUserTenants(userId: string): Promise<TenantWithRole[]> {
-    const tenantUsers = await this.prisma.tenantUser.findMany({
+    const tenantUsers = await this.tenantUserRepository.find({
       where: { userId },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            createdAt: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'asc' },
+      relations: ['tenant'],
+      order: { createdAt: 'ASC' },
     });
 
     return tenantUsers.map((tu) => ({
-      ...tu.tenant,
+      id: tu.tenant.id,
+      name: tu.tenant.name,
+      slug: tu.tenant.slug,
+      createdAt: tu.tenant.createdAt,
       role: tu.role,
     }));
   }
@@ -181,13 +157,8 @@ export class UserRepository {
    * Check if user has access to tenant
    */
   async hasTenantAccess(userId: string, tenantId: string): Promise<boolean> {
-    const tenantUser = await this.prisma.tenantUser.findUnique({
-      where: {
-        userId_tenantId: {
-          userId,
-          tenantId,
-        },
-      },
+    const tenantUser = await this.tenantUserRepository.findOne({
+      where: { userId, tenantId },
     });
 
     return !!tenantUser;

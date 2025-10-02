@@ -36,9 +36,6 @@ async function bootstrap() {
   // Global exception filter (captures errors in Sentry)
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Global prefix
-  app.setGlobalPrefix('api');
-
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('NestJS Multi-tenant API')
@@ -55,13 +52,13 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('/swagger', app, document);
 
   const port = configService.get('port');
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
+  console.log(`🚀 Application is running on: http://localhost:${port}`);
+  console.log(`📚 Swagger documentation: http://localhost:${port}/swagger`);
 }
 
 bootstrap();

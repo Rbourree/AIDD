@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { TenantRole } from '@prisma/client';
+import { TenantRole } from '@modules/tenants/enums/tenant-role.enum';
 
 export class AddUserToTenantDto {
   @ApiProperty({

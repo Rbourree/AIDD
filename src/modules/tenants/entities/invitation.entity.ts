@@ -1,33 +1,65 @@
-import { TenantRole } from '@prisma/client';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { TenantRole } from '../enums/tenant-role.enum';
+import { User } from '@modules/users/entities/user.entity';
+import { Tenant } from './tenant.entity';
 
-export class InvitationEntity {
+@Entity('invitations')
+export class Invitation {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column()
   email: string;
+
+  @Column({ unique: true })
   token: string;
+
+  @Column({
+    type: 'enum',
+    enum: TenantRole,
+    default: TenantRole.MEMBER,
+  })
   role: TenantRole;
+
+  @Column()
   expiresAt: Date;
+
+  @Column({ default: false })
   accepted: boolean;
+
+  @Column()
   tenantId: string;
+
+  @Column()
   invitedBy: string;
+
+  @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relations (optional, loaded based on query)
-  tenant?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
+  // Relations
+  @ManyToOne(() => Tenant, (tenant) => tenant.invitations, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'tenantId' })
+  tenant: Tenant;
 
-  inviter?: {
-    id: string;
-    email: string;
-    firstName: string | null;
-    lastName: string | null;
-  };
+  @ManyToOne(() => User, (user) => user.invitations)
+  @JoinColumn({ name: 'invitedBy' })
+  inviter: User;
 
-  constructor(partial: Partial<InvitationEntity>) {
-    Object.assign(this, partial);
+  constructor(partial?: Partial<Invitation>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
   }
 
   /**

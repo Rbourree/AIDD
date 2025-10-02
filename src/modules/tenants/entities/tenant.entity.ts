@@ -1,32 +1,51 @@
-import { TenantRole } from '@prisma/client';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+import { TenantRole } from '../enums/tenant-role.enum';
+import { TenantUser } from './tenant-user.entity';
+import { Invitation } from './invitation.entity';
+import { Item } from '@modules/items/entities/item.entity';
 
-export class TenantEntity {
+@Entity('tenants')
+export class Tenant {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column()
   name: string;
+
+  @Column({ unique: true })
   slug: string;
+
+  @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relations (optional, loaded based on query)
-  tenantUsers?: Array<{
-    id: string;
-    role: TenantRole;
-    userId: string;
-    user: {
-      id: string;
-      email: string;
-      firstName: string | null;
-      lastName: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-  }>;
+  // Relations
+  @OneToMany(() => TenantUser, (tenantUser) => tenantUser.tenant)
+  tenantUsers: TenantUser[];
 
+  @OneToMany(() => Invitation, (invitation) => invitation.tenant)
+  invitations: Invitation[];
+
+  @OneToMany(() => Item, (item) => item.tenant)
+  items: Item[];
+
+  // Transient properties (not persisted in database)
   myRole?: TenantRole;
   memberCount?: number;
 
-  constructor(partial: Partial<TenantEntity>) {
-    Object.assign(this, partial);
+  constructor(partial?: Partial<Tenant>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
   }
 
   /**
@@ -58,55 +77,5 @@ export class TenantEntity {
    */
   getMemberCount(): number {
     return this.tenantUsers?.length || this.memberCount || 0;
-  }
-}
-
-export class TenantUserEntity {
-  id: string;
-  role: TenantRole;
-  userId: string;
-  tenantId: string;
-  createdAt: Date;
-  updatedAt: Date;
-
-  // Relations (optional)
-  user?: {
-    id: string;
-    email: string;
-    firstName: string | null;
-    lastName: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-
-  tenant?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-
-  constructor(partial: Partial<TenantUserEntity>) {
-    Object.assign(this, partial);
-  }
-
-  /**
-   * Check if user is owner
-   */
-  isOwner(): boolean {
-    return this.role === TenantRole.OWNER;
-  }
-
-  /**
-   * Check if user is admin
-   */
-  isAdmin(): boolean {
-    return this.role === TenantRole.ADMIN;
-  }
-
-  /**
-   * Check if user is owner or admin
-   */
-  isOwnerOrAdmin(): boolean {
-    return this.role === TenantRole.OWNER || this.role === TenantRole.ADMIN;
   }
 }

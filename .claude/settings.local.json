@@ -13,7 +13,9 @@
       "Bash(npm install:*)",
       "WebFetch(domain:developers.ar24.fr)",
       "WebFetch(domain:docs.sentry.io)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm run start:*)",
+      "Bash(npm run start:dev:*)"
     ],
     "deny": [],
     "ask": []

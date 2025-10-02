@@ -1,14 +1,49 @@
-export class RefreshTokenEntity {
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import { User } from '@modules/users/entities/user.entity';
+
+@Entity('refresh_tokens')
+@Index(['token'])
+@Index(['userId'])
+export class RefreshToken {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column()
   userId: string;
+
+  @Column({ unique: true })
   token: string;
+
+  @Column()
   expiresAt: Date;
+
+  @Column({ default: false })
   revoked: boolean;
+
+  @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  constructor(partial: Partial<RefreshTokenEntity>) {
-    Object.assign(this, partial);
+  // Relations
+  @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  constructor(partial?: Partial<RefreshToken>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
   }
 
   /**

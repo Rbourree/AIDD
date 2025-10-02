@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@database/prisma.service';
+import { DataSource } from 'typeorm';
 import { UserRepository } from '@modules/users/repositories/user.repository';
 import { TenantRepository } from '@modules/tenants/repositories/tenant.repository';
 import { InvitationRepository } from '@modules/tenants/repositories/invitation.repository';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
-import { UserMapper } from '@modules/users/mappers/user.mapper';
+import { User } from '@modules/users/entities/user.entity';
+import { Tenant } from '@modules/tenants/entities/tenant.entity';
+import { TenantUser } from '@modules/tenants/entities/tenant-user.entity';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { AcceptInvitationDto } from '../dto/accept-invitation.dto';
@@ -25,12 +27,12 @@ import {
   InvitationExpiredException,
 } from '@modules/tenants/exceptions/invitation.exceptions';
 import * as bcrypt from 'bcrypt';
-import { TenantRole } from '@prisma/client';
+import { TenantRole } from '@modules/tenants/enums/tenant-role.enum';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly dataSource: DataSource,
     private readonly userRepository: UserRepository,
     private readonly tenantRepository: TenantRepository,
     private readonly invitationRepository: InvitationRepository,
@@ -50,18 +52,17 @@ export class AuthService {
 
     let activeTenantId: string;
 
-    const user = await this.prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email: registerDto.email,
-          password: hashedPassword,
-          firstName: registerDto.firstName,
-          lastName: registerDto.lastName,
-        },
+    const user = await this.dataSource.transaction(async (manager) => {
+      const newUser = manager.create(User, {
+        email: registerDto.email,
+        password: hashedPassword,
+        firstName: registerDto.firstName,
+        lastName: registerDto.lastName,
       });
+      await manager.save(User, newUser);
 
       if (registerDto.tenantId) {
-        const tenant = await tx.tenant.findUnique({
+        const tenant = await manager.findOne(Tenant, {
           where: { id: registerDto.tenantId },
         });
 
@@ -69,31 +70,28 @@ export class AuthService {
           throw new AuthTenantNotFoundException(registerDto.tenantId);
         }
 
-        await tx.tenantUser.create({
-          data: {
-            userId: newUser.id,
-            tenantId: registerDto.tenantId,
-            role: TenantRole.MEMBER,
-          },
+        const tenantUser = manager.create(TenantUser, {
+          userId: newUser.id,
+          tenantId: registerDto.tenantId,
+          role: TenantRole.MEMBER,
         });
+        await manager.save(TenantUser, tenantUser);
 
         activeTenantId = registerDto.tenantId;
       } else {
         const slug = this.generateSlug(registerDto.email);
-        const tenant = await tx.tenant.create({
-          data: {
-            name: `${registerDto.firstName || 'User'}'s Workspace`,
-            slug,
-          },
+        const tenant = manager.create(Tenant, {
+          name: `${registerDto.firstName || 'User'}'s Workspace`,
+          slug,
         });
+        await manager.save(Tenant, tenant);
 
-        await tx.tenantUser.create({
-          data: {
-            userId: newUser.id,
-            tenantId: tenant.id,
-            role: TenantRole.OWNER,
-          },
+        const tenantUser = manager.create(TenantUser, {
+          userId: newUser.id,
+          tenantId: tenant.id,
+          role: TenantRole.OWNER,
         });
+        await manager.save(TenantUser, tenantUser);
 
         activeTenantId = tenant.id;
       }
@@ -103,8 +101,11 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, activeTenantId);
 
+    // Exclude password from response
+    const { password, ...userWithoutPassword } = user;
+
     return {
-      user: UserMapper.excludePassword(user),
+      user: userWithoutPassword,
       ...tokens,
     };
   }
@@ -122,16 +123,14 @@ export class AuthService {
       throw new AuthInvalidCredentialsException();
     }
 
-    const tenantUsers = await this.prisma.tenantUser.findMany({
-      where: { userId: user.id },
-    });
+    const tenantUsers = await this.userRepository.getUserTenants(user.id);
 
     if (tenantUsers.length === 0) {
       throw new AuthUserHasNoTenantsException();
     }
 
     // Use the first tenant as the active tenant
-    const activeTenantId = tenantUsers[0].tenantId;
+    const activeTenantId = tenantUsers[0].id;
 
     const tokens = await this.generateTokens(user.id, activeTenantId);
 
@@ -203,42 +202,45 @@ export class AuthService {
 
       const hashedPassword = await bcrypt.hash(acceptInvitationDto.password, 12);
 
-      user = await this.prisma.user.create({
-        data: {
-          email: invitation.email,
-          password: hashedPassword,
-        },
+      user = await this.dataSource.getRepository(User).save({
+        email: invitation.email,
+        password: hashedPassword,
       });
     }
 
-    await this.prisma.$transaction([
-      this.prisma.tenantUser.upsert({
+    await this.dataSource.transaction(async (manager) => {
+      // Add user to tenant or update role
+      const existingTenantUser = await manager.findOne(TenantUser, {
         where: {
-          userId_tenantId: {
-            userId: user.id,
-            tenantId: invitation.tenantId,
-          },
+          userId: user.id,
+          tenantId: invitation.tenantId,
         },
-        update: {
-          role: invitation.role,
-        },
-        create: {
+      });
+
+      if (existingTenantUser) {
+        existingTenantUser.role = invitation.role;
+        await manager.save(TenantUser, existingTenantUser);
+      } else {
+        const tenantUser = manager.create(TenantUser, {
           userId: user.id,
           tenantId: invitation.tenantId,
           role: invitation.role,
-        },
-      }),
-      this.prisma.invitation.update({
-        where: { id: invitation.id },
-        data: { accepted: true },
-      }),
-    ]);
+        });
+        await manager.save(TenantUser, tenantUser);
+      }
+
+      // Mark invitation as accepted
+      await this.invitationRepository.markAsAccepted(invitation.id);
+    });
 
     // Use the invitation's tenantId as the active tenant
     const tokens = await this.generateTokens(user.id, invitation.tenantId);
 
+    // Exclude password from response
+    const { password, ...userWithoutPassword } = user;
+
     return {
-      user: UserMapper.excludePassword(user),
+      user: userWithoutPassword,
       ...tokens,
     };
   }

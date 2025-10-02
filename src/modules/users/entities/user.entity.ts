@@ -1,28 +1,53 @@
-import { TenantRole } from '@prisma/client';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+import { TenantRole } from '@modules/tenants/enums/tenant-role.enum';
+import { TenantUser } from '@modules/tenants/entities/tenant-user.entity';
+import { Invitation } from '@modules/tenants/entities/invitation.entity';
+import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
 
-export class UserEntity {
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ unique: true })
   email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ nullable: true })
   firstName: string | null;
+
+  @Column({ nullable: true })
   lastName: string | null;
+
+  @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relations (optional, loaded based on query)
-  tenantUsers?: Array<{
-    id: string;
-    role: TenantRole;
-    tenantId: string;
-    tenant: {
-      id: string;
-      name: string;
-      slug: string;
-      createdAt: Date;
-    };
-  }>;
+  // Relations
+  @OneToMany(() => TenantUser, (tenantUser) => tenantUser.user)
+  tenantUsers: TenantUser[];
 
-  constructor(partial: Partial<UserEntity>) {
-    Object.assign(this, partial);
+  @OneToMany(() => Invitation, (invitation) => invitation.inviter)
+  invitations: Invitation[];
+
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+  refreshTokens: RefreshToken[];
+
+  constructor(partial?: Partial<User>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
   }
 
   /**

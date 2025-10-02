@@ -1,0 +1,30 @@
+{{> header title="You're Invited!" headerColor="#4F46E5"}}
+
+<div style="background-color: #f9fafb; padding: 40px 30px; border-radius: 0 0 8px 8px;">
+  <p style="font-size: 16px; margin: 0 0 20px 0;">Hello,</p>
+
+  <p style="font-size: 16px; margin: 0 0 20px 0;">
+    <strong>{{inviterName}}</strong> has invited you to join <strong>{{tenantName}}</strong>.
+  </p>
+
+  <p style="font-size: 16px; margin: 0 0 20px 0;">
+    Click the button below to accept the invitation and get started:
+  </p>
+
+  {{> button url=invitationLink text="Accept Invitation" color="#4F46E5"}}
+
+  <div style="margin-top: 30px;">
+    <p style="font-size: 14px; margin: 0 0 10px 0; color: #6b7280;">
+      Or copy and paste this link into your browser:
+    </p>
+    <p style="font-size: 13px; word-break: break-all; background-color: #e5e7eb; padding: 12px; border-radius: 4px; margin: 0;">
+      {{invitationLink}}
+    </p>
+  </div>
+
+  <p style="margin-top: 40px; font-size: 14px; color: #6b7280;">
+    This invitation will expire in 24 hours. If you didn't expect this invitation, you can safely ignore this email.
+  </p>
+</div>
+
+{{> footer senderName=senderName currentYear=currentYear}}

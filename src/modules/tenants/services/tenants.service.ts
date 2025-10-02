@@ -4,8 +4,9 @@ import { TenantRepository } from '../repositories/tenant.repository';
 import { InvitationRepository } from '../repositories/invitation.repository';
 import { UserRepository } from '@modules/users/repositories/user.repository';
 import { MailService } from '@common/integrations/mail/mail.service';
-import { TenantEntity, TenantUserEntity } from '../entities/tenant.entity';
-import { InvitationEntity } from '../entities/invitation.entity';
+import { Tenant } from '../entities/tenant.entity';
+import { TenantUser } from '../entities/tenant-user.entity';
+import { Invitation } from '../entities/invitation.entity';
 import { CreateTenantDto } from '../dto/create-tenant.dto';
 import { UpdateTenantDto } from '../dto/update-tenant.dto';
 import { AddUserToTenantDto } from '../dto/add-user-to-tenant.dto';
@@ -32,7 +33,7 @@ import {
   InvitationAlreadyAcceptedException,
   InvitationExpiredException,
 } from '../exceptions/invitation.exceptions';
-import { TenantRole } from '@prisma/client';
+import { TenantRole } from '@modules/tenants/enums/tenant-role.enum';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -47,7 +48,7 @@ export class TenantsService {
 
   // ==================== Tenant CRUD ====================
 
-  async create(createTenantDto: CreateTenantDto, userId: string): Promise<TenantEntity> {
+  async create(createTenantDto: CreateTenantDto, userId: string): Promise<Tenant> {
     // Check if slug already exists
     const existingTenant = await this.tenantRepository.findBySlug(createTenantDto.slug);
 
@@ -58,11 +59,11 @@ export class TenantsService {
     return this.tenantRepository.create(createTenantDto, userId);
   }
 
-  async findAll(userId: string): Promise<TenantEntity[]> {
+  async findAll(userId: string): Promise<Tenant[]> {
     return this.tenantRepository.findAllByUserId(userId);
   }
 
-  async findOne(id: string, userId: string): Promise<TenantEntity> {
+  async findOne(id: string, userId: string): Promise<Tenant> {
     const tenant = await this.tenantRepository.findById(id);
 
     if (!tenant) {
@@ -83,7 +84,7 @@ export class TenantsService {
     id: string,
     updateTenantDto: UpdateTenantDto,
     userId: string,
-  ): Promise<TenantEntity> {
+  ): Promise<Tenant> {
     const tenant = await this.tenantRepository.findById(id);
 
     if (!tenant) {
@@ -136,7 +137,7 @@ export class TenantsService {
 
   // ==================== Tenant User Management ====================
 
-  async getTenantUsers(tenantId: string, userId: string): Promise<TenantUserEntity[]> {
+  async getTenantUsers(tenantId: string, userId: string): Promise<TenantUser[]> {
     // Check if user has access to this tenant
     const userAccess = await this.tenantRepository.getTenantUser(userId, tenantId);
 
@@ -151,7 +152,7 @@ export class TenantsService {
     tenantId: string,
     addUserDto: AddUserToTenantDto,
     requestUserId: string,
-  ): Promise<TenantUserEntity> {
+  ): Promise<TenantUser> {
     // Check if requesting user has access and is OWNER or ADMIN
     const requestUserAccess = await this.tenantRepository.getTenantUser(requestUserId, tenantId);
 
@@ -191,7 +192,7 @@ export class TenantsService {
     userId: string,
     updateRoleDto: UpdateUserRoleDto,
     requestUserId: string,
-  ): Promise<TenantUserEntity> {
+  ): Promise<TenantUser> {
     // Check if requesting user has access and is OWNER or ADMIN
     const requestUserAccess = await this.tenantRepository.getTenantUser(requestUserId, tenantId);
 
@@ -268,7 +269,7 @@ export class TenantsService {
     tenantId: string,
     createInvitationDto: CreateInvitationDto,
     invitedBy: string,
-  ): Promise<InvitationEntity> {
+  ): Promise<Invitation> {
     // Check if requesting user has access and is OWNER or ADMIN
     const requestUserAccess = await this.tenantRepository.getTenantUser(invitedBy, tenantId);
 
@@ -351,7 +352,7 @@ export class TenantsService {
     return invitation;
   }
 
-  async getInvitations(tenantId: string, userId: string): Promise<InvitationEntity[]> {
+  async getInvitations(tenantId: string, userId: string): Promise<Invitation[]> {
     // Check if user has access to this tenant
     const userAccess = await this.tenantRepository.getTenantUser(userId, tenantId);
 
@@ -407,7 +408,7 @@ export class TenantsService {
     return { message: 'Invitation cancelled successfully' };
   }
 
-  async getInvitationByToken(token: string): Promise<InvitationEntity> {
+  async getInvitationByToken(token: string): Promise<Invitation> {
     // Find invitation by token
     const invitation = await this.invitationRepository.findByToken(token);
 

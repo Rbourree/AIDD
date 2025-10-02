@@ -1,6 +1,6 @@
 import { IsEmail, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TenantRole } from '@prisma/client';
+import { TenantRole } from '@modules/tenants/enums/tenant-role.enum';
 
 export class CreateInvitationDto {
   @ApiProperty({ example: 'newuser@example.com' })

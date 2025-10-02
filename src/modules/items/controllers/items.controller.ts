@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ItemsService } from '../services/items.service';
 import { CreateItemDto } from '../dto/create-item.dto';
 import { UpdateItemDto } from '../dto/update-item.dto';
-import { PaginationDto } from '@common/dto/pagination.dto';
+import { PaginationDto } from '@common/dtos/pagination.dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { JwtPayload } from '@common/interfaces/jwt-payload.interface';
 

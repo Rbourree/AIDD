@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@database/prisma.service';
-import { ItemEntity } from '../entities/item.entity';
-import { ItemMapper } from '../mappers/item.mapper';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Item } from '../entities/item.entity';
 import { CreateItemDto } from '../dto/create-item.dto';
 import { UpdateItemDto } from '../dto/update-item.dto';
 
@@ -14,133 +14,102 @@ export interface FindAllItemsOptions {
 
 @Injectable()
 export class ItemRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Item)
+    private readonly itemRepository: Repository<Item>,
+  ) {}
 
   /**
    * Create a new item
    */
-  async create(dto: CreateItemDto, tenantId: string): Promise<ItemEntity> {
-    const data = ItemMapper.toPrismaCreate(dto, tenantId);
-
-    const item = await this.prisma.item.create({
-      data,
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+  async create(dto: CreateItemDto, tenantId: string): Promise<Item> {
+    const item = this.itemRepository.create({
+      ...dto,
+      tenantId,
     });
 
-    return ItemMapper.toEntity(item);
+    await this.itemRepository.save(item);
+
+    return this.itemRepository.findOne({
+      where: { id: item.id },
+      relations: ['tenant'],
+    });
   }
 
   /**
    * Find item by ID
    */
-  async findById(id: string): Promise<ItemEntity | null> {
-    const item = await this.prisma.item.findUnique({
+  async findById(id: string): Promise<Item | null> {
+    return this.itemRepository.findOne({
       where: { id },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      relations: ['tenant'],
     });
-
-    return item ? ItemMapper.toEntity(item) : null;
   }
 
   /**
    * Find all items with pagination and filtering
    */
-  async findAll(options: FindAllItemsOptions): Promise<ItemEntity[]> {
+  async findAll(options: FindAllItemsOptions): Promise<Item[]> {
     const { tenantId, skip, take, search } = options;
 
-    const where: any = {
-      tenantId,
-    };
+    const queryBuilder = this.itemRepository
+      .createQueryBuilder('item')
+      .leftJoinAndSelect('item.tenant', 'tenant')
+      .where('item.tenantId = :tenantId', { tenantId })
+      .orderBy('item.createdAt', 'DESC');
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { description: { contains: search, mode: 'insensitive' as const } },
-      ];
+      queryBuilder.andWhere(
+        '(item.name ILIKE :search OR item.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
-    const items = await this.prisma.item.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
-    });
+    if (skip !== undefined) {
+      queryBuilder.skip(skip);
+    }
 
-    return ItemMapper.toEntityArray(items);
+    if (take !== undefined) {
+      queryBuilder.take(take);
+    }
+
+    return queryBuilder.getMany();
   }
 
   /**
    * Count items with filtering
    */
   async count(tenantId: string, search?: string): Promise<number> {
-    const where: any = {
-      tenantId,
-    };
+    const queryBuilder = this.itemRepository
+      .createQueryBuilder('item')
+      .where('item.tenantId = :tenantId', { tenantId });
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { description: { contains: search, mode: 'insensitive' as const } },
-      ];
+      queryBuilder.andWhere(
+        '(item.name ILIKE :search OR item.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
-    return this.prisma.item.count({ where });
+    return queryBuilder.getCount();
   }
 
   /**
    * Update an item
    */
-  async update(id: string, dto: UpdateItemDto): Promise<ItemEntity> {
-    const data = ItemMapper.toPrismaUpdate(dto);
+  async update(id: string, dto: UpdateItemDto): Promise<Item> {
+    await this.itemRepository.update(id, dto);
 
-    const item = await this.prisma.item.update({
+    return this.itemRepository.findOne({
       where: { id },
-      data,
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-      },
+      relations: ['tenant'],
     });
-
-    return ItemMapper.toEntity(item);
   }
 
   /**
    * Delete an item
    */
   async delete(id: string): Promise<void> {
-    await this.prisma.item.delete({
-      where: { id },
-    });
+    await this.itemRepository.delete(id);
   }
 }

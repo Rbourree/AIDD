@@ -1,10 +1,11 @@
-FROM node:18-alpine AS development
+FROM node:22-alpine AS development
 
 WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
 
+RUN apk add --no-cache openssl
 RUN npm ci
 
 COPY . .
@@ -16,13 +17,14 @@ EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 
 WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
 
+RUN apk add --no-cache openssl
 RUN npm ci --only=production
 
 COPY . .

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@database/prisma.service';
-import { InvitationEntity } from '../entities/invitation.entity';
-import { InvitationMapper } from '../mappers/invitation.mapper';
-import { TenantRole } from '@prisma/client';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, MoreThan } from 'typeorm';
+import { Invitation } from '../entities/invitation.entity';
+import { TenantRole } from '../enums/tenant-role.enum';
 
 export interface CreateInvitationData {
   email: string;
@@ -15,117 +15,56 @@ export interface CreateInvitationData {
 
 @Injectable()
 export class InvitationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Invitation)
+    private readonly invitationRepository: Repository<Invitation>,
+  ) {}
 
   /**
    * Create a new invitation
    */
-  async create(data: CreateInvitationData): Promise<InvitationEntity> {
-    const invitation = await this.prisma.invitation.create({
-      data,
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        inviter: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    });
+  async create(data: CreateInvitationData): Promise<Invitation> {
+    const invitation = this.invitationRepository.create(data);
+    await this.invitationRepository.save(invitation);
 
-    return InvitationMapper.toEntity(invitation);
+    return this.invitationRepository.findOne({
+      where: { id: invitation.id },
+      relations: ['tenant', 'inviter'],
+    });
   }
 
   /**
    * Find invitation by token
    */
-  async findByToken(token: string): Promise<InvitationEntity | null> {
-    const invitation = await this.prisma.invitation.findUnique({
+  async findByToken(token: string): Promise<Invitation | null> {
+    return this.invitationRepository.findOne({
       where: { token },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        inviter: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
+      relations: ['tenant', 'inviter'],
     });
-
-    return invitation ? InvitationMapper.toEntity(invitation) : null;
   }
 
   /**
    * Find invitation by ID
    */
-  async findById(id: string): Promise<InvitationEntity | null> {
-    const invitation = await this.prisma.invitation.findUnique({
+  async findById(id: string): Promise<Invitation | null> {
+    return this.invitationRepository.findOne({
       where: { id },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        inviter: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
+      relations: ['tenant', 'inviter'],
     });
-
-    return invitation ? InvitationMapper.toEntity(invitation) : null;
   }
 
   /**
    * Find all pending invitations for a tenant
    */
-  async findPendingByTenantId(tenantId: string): Promise<InvitationEntity[]> {
-    const invitations = await this.prisma.invitation.findMany({
+  async findPendingByTenantId(tenantId: string): Promise<Invitation[]> {
+    return this.invitationRepository.find({
       where: {
         tenantId,
         accepted: false,
       },
-      include: {
-        inviter: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      relations: ['inviter'],
+      order: { createdAt: 'DESC' },
     });
-
-    return InvitationMapper.toEntityArray(invitations);
   }
 
   /**
@@ -134,37 +73,28 @@ export class InvitationRepository {
   async findPendingByEmailAndTenant(
     email: string,
     tenantId: string,
-  ): Promise<InvitationEntity | null> {
-    const invitation = await this.prisma.invitation.findFirst({
+  ): Promise<Invitation | null> {
+    return this.invitationRepository.findOne({
       where: {
         email,
         tenantId,
         accepted: false,
-        expiresAt: {
-          gte: new Date(),
-        },
+        expiresAt: MoreThan(new Date()),
       },
     });
-
-    return invitation ? InvitationMapper.toEntity(invitation) : null;
   }
 
   /**
    * Mark invitation as accepted
    */
   async markAsAccepted(id: string): Promise<void> {
-    await this.prisma.invitation.update({
-      where: { id },
-      data: { accepted: true },
-    });
+    await this.invitationRepository.update(id, { accepted: true });
   }
 
   /**
    * Delete invitation
    */
   async delete(id: string): Promise<void> {
-    await this.prisma.invitation.delete({
-      where: { id },
-    });
+    await this.invitationRepository.delete(id);
   }
 }

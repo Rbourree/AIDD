@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ItemRepository } from '../repositories/item.repository';
-import { ItemEntity } from '../entities/item.entity';
+import { Item } from '../entities/item.entity';
 import { CreateItemDto } from '../dto/create-item.dto';
 import { UpdateItemDto } from '../dto/update-item.dto';
-import { PaginationDto } from '@common/dto/pagination.dto';
+import { PaginationDto } from '@common/dtos/pagination.dto';
 import { PaginatedResponse } from '@common/interfaces/paginated-response.interface';
 import { ItemNotFoundException, ItemForbiddenException } from '../exceptions/item.exceptions';
 
@@ -11,14 +11,14 @@ import { ItemNotFoundException, ItemForbiddenException } from '../exceptions/ite
 export class ItemsService {
   constructor(private readonly itemRepository: ItemRepository) {}
 
-  async create(createItemDto: CreateItemDto, userTenantId: string): Promise<ItemEntity> {
+  async create(createItemDto: CreateItemDto, userTenantId: string): Promise<Item> {
     return this.itemRepository.create(createItemDto, userTenantId);
   }
 
   async findAll(
     paginationDto: PaginationDto,
     userTenantId: string,
-  ): Promise<PaginatedResponse<ItemEntity>> {
+  ): Promise<PaginatedResponse<Item>> {
     const { page, limit, search } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -43,7 +43,7 @@ export class ItemsService {
     };
   }
 
-  async findOne(id: string, userTenantId: string): Promise<ItemEntity> {
+  async findOne(id: string, userTenantId: string): Promise<Item> {
     const item = await this.itemRepository.findById(id);
 
     if (!item) {
@@ -62,7 +62,7 @@ export class ItemsService {
     id: string,
     updateItemDto: UpdateItemDto,
     userTenantId: string,
-  ): Promise<ItemEntity> {
+  ): Promise<Item> {
     // First, verify the item exists and user has access
     await this.findOne(id, userTenantId);
 

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
-import { UserEntity } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
-import { PaginationDto } from '@common/dto/pagination.dto';
+import { PaginationDto } from '@common/dtos/pagination.dto';
 import { PaginatedResponse } from '@common/interfaces/paginated-response.interface';
 import {
   UserNotFoundException,
@@ -17,7 +17,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async findMe(userId: string): Promise<UserEntity> {
+  async findMe(userId: string): Promise<User> {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
@@ -27,7 +27,7 @@ export class UsersService {
     return user;
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResponse<UserEntity>> {
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResponse<User>> {
     const { page, limit, search } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -47,7 +47,7 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string): Promise<UserEntity> {
+  async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findById(id);
 
     if (!user) {
@@ -57,7 +57,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.userRepository.findById(id);
 
     if (!user) {
