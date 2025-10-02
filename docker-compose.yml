@@ -1,28 +1,11 @@
 services:
-  api_postgres:
-    image: postgres:15-alpine
-    container_name: nestjs-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nestjs_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  api:
+  mylegitech_api:
     build:
       context: .
       dockerfile: Dockerfile
       target: development
-    container_name: nestjs-api
+    container_name: mylegitech-api
     restart: always
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
@@ -34,6 +17,24 @@ services:
     volumes:
       - ./src:/app/src
     command: sh -c "npx prisma migrate deploy && npm run start:dev"
+
+  mylegitech_postgres:
+    image: postgres:15-alpine
+    container_name: mylegitech-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mylegitech
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     container_name: keycloak_app
