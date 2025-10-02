@@ -17,7 +17,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         synchronize: false, // Never use true in production
         logging: configService.get('nodeEnv') === 'development',
-        ssl: configService.get('database.ssl') === 'true' ? { rejectUnauthorized: false } : false,
+        ssl: configService.get('database.ssl') ? { rejectUnauthorized: false } : false,
       }),
     }),
   ],
