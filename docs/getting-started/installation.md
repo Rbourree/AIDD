@@ -1,17 +1,17 @@
 # Installation
 
-This guide will help you install and set up the NestJS Multi-Tenant API on your local machine.
+This guide walks you through installing and configuring the NestJS Multi-Tenant API powered by TypeORM.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+Before you begin, install the following tools:
 
 | Tool | Version | Required | Notes |
 |------|---------|----------|-------|
 | Node.js | 18+ | ✅ Yes | Download from [nodejs.org](https://nodejs.org) |
-| npm | 9+ | ✅ Yes | Comes with Node.js |
-| PostgreSQL | 15+ | ✅ Yes | Database server |
-| Docker | 24+ | ⭕ Optional | For containerized PostgreSQL |
+| npm | 10+ | ✅ Yes | Comes with recent Node.js versions |
+| PostgreSQL | 13+ | ✅ Yes | Primary database |
+| Docker | 24+ | ⭕ Optional | Simplest way to run PostgreSQL locally |
 
 ## Step 1: Clone the Repository
 
@@ -26,170 +26,127 @@ cd nestjs-api
 npm install
 ```
 
-This will install all required packages including:
-- NestJS framework
-- Prisma ORM
-- Authentication packages (Passport, JWT)
-- Integration SDKs (Mailjet, Yousign, AR24, Sentry)
+This installs NestJS, TypeORM, authentication packages (Passport, JWT), and integration SDKs (Mailjet, Yousign, AR24, Sentry).
 
-Installation typically takes 1-2 minutes depending on your internet connection.
+## Step 3: Provision PostgreSQL
 
-## Step 3: Setup PostgreSQL
+You can either start the Docker Compose stack or point the application to an existing PostgreSQL instance.
 
-You have two options for setting up PostgreSQL:
-
-### Option A: Using Docker (Recommended)
-
-If you have Docker installed:
+### Option A: Docker (Recommended)
 
 ```bash
 npm run docker:up
 ```
 
-This will start a PostgreSQL 15 container with the following credentials:
+This starts PostgreSQL with the defaults defined in `.env.example`:
 - Host: `localhost`
 - Port: `5432`
 - Database: `nestjs_db`
 - User: `postgres`
 - Password: `postgres`
 
-### Option B: Local PostgreSQL Installation
+### Option B: Existing PostgreSQL Server
 
-If you prefer to use a local PostgreSQL installation:
-
-1. Install PostgreSQL 15+ from [postgresql.org](https://www.postgresql.org/download/)
-2. Create a new database:
+1. Install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/)
+2. Create a database:
    ```sql
    CREATE DATABASE nestjs_db;
    ```
-3. Update your `.env` file with your PostgreSQL credentials (see next step)
+3. Ensure the credentials are reflected in your `.env` file
 
 ## Step 4: Configure Environment Variables
 
-Create your environment configuration file:
+Copy the example file and adjust values as needed:
 
 ```bash
 cp .env.example .env
 ```
 
-The `.env.example` file contains all necessary configuration with sensible defaults. For local development, you can use it as-is, or customize the following key variables:
+Key values to review:
 
 ```bash
 # Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nestjs_db
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=nestjs_db
 
-# JWT Secrets (change these in production!)
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-REFRESH_TOKEN_SECRET=your-refresh-token-secret
-
-# Application
-PORT=3000
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:3001
+# JWT Secrets (change in production)
+JWT_SECRET=change-me
+REFRESH_TOKEN_SECRET=change-me-too
 ```
 
-**Important**: For production, you must change the JWT secrets to secure values. You can generate strong secrets using:
+Refer to the [Configuration Guide](./configuration.md) for every available option.
+
+## Step 5: Run Database Migrations
+
+Apply the latest TypeORM migrations before starting the application:
 
 ```bash
-openssl rand -base64 32
+npm run typeorm:migration:run
 ```
 
-See [Configuration Guide](./configuration.md) for all available environment variables.
+The CLI uses the data source defined in `src/config/typeorm.config.ts` and will create all required tables (users, tenants, invitations, refresh tokens, items, etc.).
 
-## Step 5: Initialize the Database
-
-Generate the Prisma Client:
+## Step 6: Start the Application
 
 ```bash
-npm run prisma:generate
+npm run start:dev
 ```
 
-Run database migrations:
+You should see:
 
-```bash
-npm run prisma:migrate
+```
+🚀 Application is running on: http://localhost:3000/api
+📚 Swagger documentation: http://localhost:3000/swagger
 ```
 
-This will create all necessary tables (User, Tenant, TenantUser, Invitation, RefreshToken, Item).
+Visit the health endpoint to verify the service:
 
-## Step 6: Seed Sample Data (Optional)
-
-To populate your database with sample data for testing:
-
-```bash
-npm run prisma:seed
 ```
-
-This creates two users:
-- **Admin User**: `admin@example.com` / `password123` (OWNER role)
-- **Regular User**: `user@example.com` / `password123` (MEMBER role)
-
-Both belong to a sample tenant called "Acme Corporation".
-
-## Verify Installation
-
-To verify everything is set up correctly:
-
-1. Check database connection:
-   ```bash
-   npm run prisma:studio
-   ```
-   This should open Prisma Studio at http://localhost:5555
-
-2. Start the development server:
-   ```bash
-   npm run start:dev
-   ```
-
-3. You should see:
-   ```
-   🚀 Application is running on: http://localhost:3000/api
-   📚 Swagger documentation: http://localhost:3000/swagger
-   ```
-
-4. Visit http://localhost:3000/health - you should see a health check response
+http://localhost:3000/health
+```
 
 ## Next Steps
 
-- [Quick Start Guide](./quick-start.md) - Get started in 5 minutes
-- [Configuration Guide](./configuration.md) - Learn about all configuration options
-- [First Steps](./first-steps.md) - Make your first API calls
+- [Quick Start Guide](./quick-start.md) – Spin up the app and call the API
+- [First Steps](./first-steps.md) – Register, login, and explore endpoints
+- [Architecture Overview](../architecture/overview.md) – Understand the system design
 
 ## Troubleshooting
 
 ### Port 3000 Already in Use
 
-Change the port in your `.env` file:
 ```bash
-PORT=3001
+PORT=3001 npm run start:dev
 ```
 
-### Database Connection Failed
+### Database Connection Fails
 
-**Check that PostgreSQL is running:**
 ```bash
-# If using Docker:
-docker ps
+# If using Docker
+npm run docker:down
+npm run docker:up
 
-# If using local PostgreSQL:
-pg_isready
+# Check container status
+docker ps | grep postgres
 ```
 
-**Verify your DATABASE_URL** in `.env` matches your PostgreSQL setup.
+### TypeORM CLI Cannot Connect
 
-### Prisma Client Not Generated
+Ensure environment variables are loaded when running migrations:
 
-If you see errors about `@prisma/client` not found:
 ```bash
-npm run prisma:generate
+cat .env | grep DATABASE
+npm run typeorm:migration:run
 ```
 
 ### npm install Fails
 
-Clear npm cache and retry:
 ```bash
 npm cache clean --force
 npm install
 ```
 
-For more troubleshooting help, see the [Troubleshooting Guide](../troubleshooting.md).
+For more detailed solutions, read the [Troubleshooting Guide](../troubleshooting.md).

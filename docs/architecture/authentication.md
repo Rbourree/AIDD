@@ -47,7 +47,7 @@ sequenceDiagram
   "password": "SecurePass123!",
   "firstName": "John",
   "lastName": "Doe",
-  "tenantName": "My Company"  // Optional: join existing or create new
+  "tenantId": "optional-existing-tenant-id"
 }
 ```
 
@@ -56,8 +56,8 @@ sequenceDiagram
 2. Check if user exists
 3. Hash password with bcrypt (12 rounds)
 4. Create user record
-5. Create or join tenant
-6. Assign role (OWNER for new tenant, MEMBER for existing)
+5. If `tenantId` provided, join existing tenant as MEMBER
+6. Otherwise create a new tenant + OWNER membership
 7. Generate JWT tokens
 8. Store refresh token (hashed with SHA-256)
 9. Return tokens + user data
@@ -238,20 +238,28 @@ Enforced via `@IsStrongPassword()` decorator:
 
 ### Storage
 
-Refresh tokens are stored in the database:
+Refresh tokens are stored via the `RefreshToken` TypeORM entity (`src/modules/auth/entities/refresh-token.entity.ts`).
 
 ```typescript
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique  // SHA-256 hash of JWT
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  revoked   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+@Entity('refresh_tokens')
+export class RefreshToken {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @@map("refresh_tokens")
+  @Column({ unique: true })
+  token: string; // SHA-256 hash of the refresh JWT
+
+  @Column()
+  userId: string;
+
+  @Column()
+  expiresAt: Date;
+
+  @Column({ default: false })
+  revoked: boolean;
+
+  @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: 'CASCADE' })
+  user: User;
 }
 ```
 
@@ -267,12 +275,10 @@ const hashedToken = crypto
   .update(refreshToken)
   .digest('hex');
 
-await this.prisma.refreshToken.create({
-  data: {
-    token: hashedToken,
-    userId,
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-  },
+await this.refreshTokenRepository.create({
+  token: hashedToken,
+  userId,
+  expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
 });
 ```
 
@@ -392,8 +398,7 @@ POST /auth/register
   "email": "john@example.com",
   "password": "SecurePass123!",
   "firstName": "John",
-  "lastName": "Doe",
-  "tenantName": "My Company"
+  "lastName": "Doe"
 }
 
 // Response
@@ -401,7 +406,7 @@ POST /auth/register
   "accessToken": "eyJhbGc...",
   "refreshToken": "eyJhbGc...",
   "user": { ... },
-  "tenant": { "id": "uuid", "name": "My Company", "role": "OWNER" }
+  "tenant": { "id": "uuid", "name": "John's Workspace", "role": "OWNER" }
 }
 
 // 2. Use access token for requests

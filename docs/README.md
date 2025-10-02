@@ -59,7 +59,7 @@ Deploy to production:
 
 - **[Docker Deployment](./deployment/docker.md)** - Containerized deployment
 - **[Production Configuration](./deployment/production.md)** - Production best practices
-- **[Database Migrations](./deployment/migrations.md)** - Managing Prisma migrations
+- **[Database Migrations](./deployment/migrations.md)** - Managing TypeORM migrations
 
 ## 🐛 Troubleshooting
 
